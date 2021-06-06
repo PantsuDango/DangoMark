@@ -14,3 +14,20 @@ CREATE TABLE `user` (
     UNIQUE KEY `user` (`user`),
     KEY `ip` (`ip`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='用户信息表';
+
+
+CREATE TABLE `image_data` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `url` varchar(128) NOT NULL COMMENT '图片链接',
+    `language` varchar(16) DEFAULT NULL COMMENT '语种: CH-中文, ENG-英语, JAP-日文, KOR-韩语',
+    `suggestion` varchar(256) DEFAULT NULL COMMENT '预标注建议',
+    `mark_result` varchar(256) DEFAULT NULL COMMENT '标注结果',
+    `quality_result` varchar(256) DEFAULT NULL COMMENT '复检结果',
+    `coordinate_json` varchar(256) DEFAULT NULL COMMENT '文字坐标json字符串',
+    `status` tinyint(4) NOT NULL DEFAULT 0 COMMENT '数据状态: 0-未标注, 1-已标注未复检, 2-已标注已复检, 3-已用于训练, 4-无意义数据',
+    `createtime` datetime NOT NULL COMMENT '创建时间',
+    `lastupdate` datetime NOT NULL COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY (`url`),
+    KEY (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='图片标注数据表';

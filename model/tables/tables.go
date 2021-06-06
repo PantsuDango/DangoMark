@@ -15,3 +15,19 @@ type User struct {
 func (User) TableName() string {
 	return "user"
 }
+
+type ImageData struct {
+	ID             int       `json:"ID"              gorm:"column:id"`
+	Url            string    `json:"Url"             gorm:"column:url"`
+	Suggestion     string    `json:"Suggestion"      gorm:"column:suggestion"`
+	MarkResult     string    `json:"MarkResult"      gorm:"column:mark_result"`
+	QualityResult  string    `json:"QualityResult"   gorm:"column:quality_result"`
+	CoordinateJson string    `json:"CoordinateJson"  gorm:"column:coordinate_json"`
+	Status         int       `json:"Status"          gorm:"column:status"`
+	CreatedAt      time.Time `json:"CreateTime"      gorm:"column:createtime"`
+	UpdatedAt      time.Time `json:"UpdateTime"      gorm:"column:lastupdate"`
+}
+
+func (ImageData) TableName() string {
+	return "image_data"
+}

@@ -9,5 +9,6 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/satori/go.uuid v1.2.0
+	gopkg.in/ffmt.v1 v1.5.6 // indirect
 	gopkg.in/ini.v1 v1.55.0
 )
