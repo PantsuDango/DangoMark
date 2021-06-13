@@ -42,7 +42,7 @@ const (
 )
 
 type Controller struct {
-	SocialDB db.SocialDB
+	DangoDB db.DangoDB
 }
 
 type Handler func(*gin.Context, tables.User)
@@ -159,7 +159,7 @@ func (ct Controller) Handle(ctx *gin.Context) {
 			}
 			userID, _ := strconv.Atoi(token.Id)
 
-			user, err = ct.SocialDB.QueryUserById(userID)
+			user, err = ct.DangoDB.QueryUserById(userID)
 			if err != nil {
 				JSONFail(ctx, http.StatusOK, AccessDBError, "Access user table error", gin.H{
 					"Code":    AccessDBError,
@@ -196,7 +196,7 @@ func (Controller Controller) Login(ctx *gin.Context) {
 		return
 	}
 
-	userInfo, err := Controller.SocialDB.GetUserInfo(user.User)
+	userInfo, err := Controller.DangoDB.GetUserInfo(user.User)
 	if err != nil {
 		JSONFail(ctx, http.StatusOK, AccessDBError, "Access user table error.", gin.H{
 			"Code":    AccessDBError,
@@ -258,7 +258,7 @@ func createToken(auth string) (string, error) {
 	userID, _ := strconv.Atoi(oldClaims.Id)
 
 	Controller := new(Controller)
-	user, err := Controller.SocialDB.QueryUserById(userID)
+	user, err := Controller.DangoDB.QueryUserById(userID)
 	if err != nil {
 		return "", err
 	}
@@ -311,7 +311,7 @@ func parseToken(token string) (*jwt.StandardClaims, error) {
 		println(err.Error())
 	}
 
-	u, _ := db.SocialDB{}.QueryUserById(int(operator_id))
+	u, _ := db.DangoDB{}.QueryUserById(int(operator_id))
 	jwtToken, err := jwt.ParseWithClaims(token, &jwt.StandardClaims{},
 		func(token *jwt.Token) (i interface{}, e error) {
 			return []byte(u.Password), nil

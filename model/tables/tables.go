@@ -19,6 +19,7 @@ func (User) TableName() string {
 type ImageData struct {
 	ID             int       `json:"ID"              gorm:"column:id"`
 	Url            string    `json:"Url"             gorm:"column:url"`
+	Language       string    `json:"Language"        gorm:"column:language"`
 	Suggestion     string    `json:"Suggestion"      gorm:"column:suggestion"`
 	MarkResult     string    `json:"MarkResult"      gorm:"column:mark_result"`
 	QualityResult  string    `json:"QualityResult"   gorm:"column:quality_result"`

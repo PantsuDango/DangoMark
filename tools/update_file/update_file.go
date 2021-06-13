@@ -2,22 +2,23 @@ package main
 
 import (
 	"DangoMark/model/params"
+	"DangoMark/model/result"
+	"DangoMark/model/tables"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jinzhu/gorm"
 	uuid "github.com/satori/go.uuid"
-	"gopkg.in/ffmt.v1"
+	"gopkg.in/ini.v1"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
-	"gopkg.in/ini.v1"
 )
 
 var (
@@ -113,24 +114,45 @@ func readImageFile(path string) {
 	} // 结束循环
 }
 
+// 读取文件
 func openFile() {
 
 	dfsURL := pub_config.Section("filesystem").Key("fileserverupload").Value()
+	count := 1
 	for key, value := range file_map {
 		for fileType, filePath := range value {
-			fileContent, _ := ioutil.ReadFile(filePath) // just pass the file name
+			fileContent, err := ioutil.ReadFile(filePath)
+			if err != nil {
+				continue
+			}
 			switch fileType {
 			case "image":
 				fileURL := saveFileToDFS(dfsURL, fileContent)
 				file_map[key]["image"] = fileURL
 			case "txt":
-				file_map[key]["text"] = string(fileContent)
+				reg := regexp.MustCompile(`'(.+?)'`)
+				regArray := reg.FindAllString(string(fileContent), -1)
+
+				var WordArray result.WordArray
+				for _, content := range regArray {
+					if content != "'words'" {
+						WordArray.Words = append(WordArray.Words, content[1:len(content)-1])
+					}
+				}
+				jsonByte, _ := json.Marshal(WordArray)
+				file_map[key]["text"] = string(jsonByte)
 			}
 		}
+		file_map[key]["language"] = strings.Split(key, "_")[2]
+
+		saveImageData(file_map[key]["image"], file_map[key]["language"], file_map[key]["text"])
+		fmt.Printf("%d. url: %s\n", count, file_map[key]["image"])
+		count += 1
 
 	} // 结束循环
 }
 
+// 文件上传dfs
 func saveFileToDFS(destURL string, fileContent []byte) string {
 
 	// format params
@@ -159,12 +181,20 @@ func saveFileToDFS(destURL string, fileContent []byte) string {
 	return fileinfo.URL
 }
 
+// 保存saveImageData
+func saveImageData(url, language, suggestion string) {
+
+	var image_data tables.ImageData
+	image_data.Url = url
+	image_data.Language = language
+	image_data.Suggestion = suggestion
+	exeDB.Save(&image_data)
+}
+
 func main() {
 
 	defer exeDB.Close()
 	path := os.Args[1]
 	readImageFile(path)
 	openFile()
-	_, _ = ffmt.Puts(file_map)
-
 }
