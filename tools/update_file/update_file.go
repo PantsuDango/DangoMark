@@ -1,10 +1,16 @@
 package main
 
 import (
-	"encoding/base64"
+	"DangoMark/model/params"
+	"bytes"
+	"encoding/json"
 	"fmt"
+	uuid "github.com/satori/go.uuid"
+	"gopkg.in/ffmt.v1"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,10 +21,11 @@ import (
 )
 
 var (
-	log_file    *os.File
-	config_file *ini.File
-	exeDB       *gorm.DB
-	file_map    = make(map[string]map[string]string)
+	log_file   *os.File
+	db_config  *ini.File
+	pub_config *ini.File
+	exeDB      *gorm.DB
+	file_map   = make(map[string]map[string]string)
 )
 
 func init() {
@@ -45,21 +52,20 @@ func setLogFile() {
 // 打开配置文件
 func openConfig() {
 
-	var err error
 	work_path, _ := os.Getwd()
 	path := strings.Split(work_path, "DangoMark")[0]
-	config_path := filepath.Join(path, "/DangoMark/config", "/db.ini")
-	config_file, err = ini.Load(config_path)
-	if err != nil {
-		log.Fatalf("读取配置文件 %s 失败: %s\n", config_path, err)
-	}
+	db_config_path := filepath.Join(path, "/DangoMark/config", "/db.ini")
+	db_config, _ = ini.Load(db_config_path)
+	pub_config_path := filepath.Join(path, "/DangoMark/config", "/pub.ini")
+	pub_config, _ = ini.Load(pub_config_path)
+
 }
 
 // 连接数据库
 func openDB() {
 
 	var err error
-	cfgSection := config_file.Section("DangoMark")
+	cfgSection := db_config.Section("DangoMark")
 	url := cfgSection.Key("url").Value()
 	username := cfgSection.Key("username").Value()
 	password := cfgSection.Key("password").Value()
@@ -107,11 +113,50 @@ func readImageFile(path string) {
 	} // 结束循环
 }
 
-// 图片转换为base64
-func ImageToBase64(path string) string {
-	image, _ := ioutil.ReadFile(path)
-	imageBase64 := base64.StdEncoding.EncodeToString(image)
-	return imageBase64
+func openFile() {
+
+	dfsURL := pub_config.Section("filesystem").Key("fileserverupload").Value()
+	for key, value := range file_map {
+		for fileType, filePath := range value {
+			fileContent, _ := ioutil.ReadFile(filePath) // just pass the file name
+			switch fileType {
+			case "image":
+				fileURL := saveFileToDFS(dfsURL, fileContent)
+				file_map[key]["image"] = fileURL
+			case "txt":
+				file_map[key]["text"] = string(fileContent)
+			}
+		}
+
+	} // 结束循环
+}
+
+func saveFileToDFS(destURL string, fileContent []byte) string {
+
+	// format params
+	fields := map[string]string{
+		"file":   uuid.NewV4().String(),
+		"output": "json",
+		"scene":  "",
+		"path":   "",
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	fw, _ := writer.CreateFormFile("file", fields["file"])
+
+	_, _ = fw.Write(fileContent)
+	for k, v := range fields {
+		_ = writer.WriteField(k, v)
+	}
+	_ = writer.Close()
+
+	resp, _ := http.Post(destURL, writer.FormDataContentType(), body)
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	fileinfo := &params.FileInfo{}
+	_ = json.Unmarshal(respbody, &fileinfo)
+
+	return fileinfo.URL
 }
 
 func main() {
@@ -119,4 +164,7 @@ func main() {
 	defer exeDB.Close()
 	path := os.Args[1]
 	readImageFile(path)
+	openFile()
+	_, _ = ffmt.Puts(file_map)
+
 }
