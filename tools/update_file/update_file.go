@@ -146,7 +146,7 @@ func openFile() {
 		file_map[key]["language"] = strings.Split(key, "_")[2]
 
 		saveImageData(file_map[key]["image"], file_map[key]["language"], file_map[key]["text"])
-		fmt.Printf("%d. url: %s\n", count, file_map[key]["image"])
+		log.Printf("%d. url: %s\n", count, file_map[key]["image"])
 		count += 1
 
 	} // 结束循环
