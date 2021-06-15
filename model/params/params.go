@@ -9,3 +9,8 @@ type FileInfo struct {
 	Retcode int    `json:"retcode" form:"retcode"`
 	URL     string `json:"url"     form:"url"      binding:"required"`
 }
+
+type GetImageData struct {
+	Language string `json:"Language"  binding:"required"`
+	Status   int    `json:"Status"`
+}
